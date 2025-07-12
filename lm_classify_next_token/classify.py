@@ -6,6 +6,7 @@ import itertools
 import math
 from collections import defaultdict
 import argparse
+import os
 
 TOTAL_LINES = 72_019_562
 N_CHOICES = 32
@@ -112,7 +113,8 @@ def parse_args():
     
     return parser.parse_args()
 
-def process_batch(args, llm, tokenizer, article_batch, batch):
+def process_batch(args, llm, tokenizer, article_batch, batch, accuracy_counter):
+    accuracy_file = os.path.splitext(args.output_file)[0] + "_accuracy.json"
     # get the stringified description passed to the model
     article_desc = [x[1]['content'] for x in batch]
 
@@ -151,6 +153,15 @@ def process_batch(args, llm, tokenizer, article_batch, batch):
             except:
                 pass
             
+            # track accuracy if we have both true and predicted labels
+            true_label = metadata.get('attributes.types.resourceTypeGeneral')
+            if true_label and category_pred:
+                if true_label not in accuracy_counter:
+                    accuracy_counter[true_label] = {}
+                if category_pred not in accuracy_counter[true_label]:
+                    accuracy_counter[true_label][category_pred] = 0
+                accuracy_counter[true_label][category_pred] += 1
+            
             # write the output to the output file
             metadata['prediction'] = {
                 'category': category_pred,
@@ -159,6 +170,10 @@ def process_batch(args, llm, tokenizer, article_batch, batch):
             }
             
             f.write(json.dumps(metadata) + "\n")
+    
+    # save accuracy counter after each batch
+    with open(accuracy_file, "w") as f:
+        json.dump(accuracy_counter, f, indent=2)
 
 def main():
     args = parse_args()
@@ -171,6 +186,9 @@ def main():
     )
     tokenizer = AutoTokenizer.from_pretrained(args.model)
 
+    # initialize accuracy counter
+    accuracy_counter = {}
+    
     # process the articles
     with open(args.input_file, "r") as f:
         article_batch = []
@@ -197,12 +215,12 @@ def main():
             batch.append(prompt)
 
             if len(batch) >= args.batch_size:
-                process_batch(args, llm, tokenizer, article_batch, batch)
+                process_batch(args, llm, tokenizer, article_batch, batch, accuracy_counter)
                 batch = []
                 article_batch = []
             
         if batch:
-            process_batch(args, llm, tokenizer, article_batch, batch)
+            process_batch(args, llm, tokenizer, article_batch, batch, accuracy_counter)
 
 if __name__ == "__main__":
     main()
