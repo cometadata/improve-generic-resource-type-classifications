@@ -14,5 +14,5 @@ cd /scratch/m000152/comet/generic-resource-type/lm_classify_next_token
 
 python classify.py \
     --input_file /scratch/m000152/comet/data/datacite_2024_metadata.jsonl \
-    --output_file /scratch/m000152/comet/generic-resource-type/lm_classify_next_token/datacite_2024_classified_qwen_qwen3_8b.jsonl \
+    --output_file /scratch/m000152/comet/generic-resource-type/lm_classify_next_token/output/icl/datacite_2024_classified_qwen3_8b.jsonl \
     --batch_size 5000
