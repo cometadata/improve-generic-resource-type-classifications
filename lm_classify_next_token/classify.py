@@ -54,6 +54,49 @@ Pick only one of the above categories, whichever one fits best. Pay very careful
 * "Program" can mean computer program ("Software") or a conference/symposium program ("Event")'
 * Here is an example of a physical object: attributes.creators[0].name: GLIS Of The ITPGRFA; attributes.titles[0].title: Oryza sativa L. Os00129; attributes.publisher: {\"name\":\"CREA-Research Center for Cereals and Industrial Crops\"}; attributes.publicationYear: 2024; attributes.contributors[0].name: CREA-Research Center For Cereals And Industrial Crops; attributes.types.resourceType: PGRFA Material
 
+Here are some clear examples to help you distinguish between commonly confused categories:
+
+## Software vs Dataset
+
+Example 1 (Software):
+attributes.titles[0].title: FilteredPush/geo_ref_qc: Release version 2.0.0 of the geo_ref_qc library
+attributes.publisher: Zenodo
+Note: GitHub-style naming (username/repo), "Release version", and "library" are strong Software indicators.
+Correct classification: 26 (Software)
+
+Example 2 (Software):
+attributes.titles[0].title: Code and data for publication "Dielectric profile at the Pt(111)/water interface"
+attributes.publisher: Zenodo
+Note: Even when "data" is mentioned, if "code" is explicitly stated, it's typically Software.
+Correct classification: 26 (Software)
+
+Example 3 (Dataset):
+attributes.titles[0].title: Gene expression data from human lung tissue samples
+attributes.publisher: Gene Expression Omnibus
+Note: Pure data files without code components are Dataset.
+Correct classification: 10 (Dataset)
+
+## Book vs Image/Dataset
+
+Example 4 (Book):
+attributes.titles[0].title: Folding The Exhibition
+attributes.publisher: Museu D'Art Contemporani De Barcelona
+Note: Museum publications and exhibition catalogs are Books, not Images.
+Correct classification: 3 (Book)
+
+Example 5 (Book):
+attributes.titles[0].title: Various Methods for Visualization and Size Determination of Gas Bubbles
+attributes.publisher: University Press
+Note: Academic books about visualization/imaging techniques are still Books, not Images.
+Correct classification: 3 (Book)
+
+## Patterns
+
+- Software: Look for version numbers (v1.0, 2.0.0), GitHub patterns (user/repo), "release", "library", "code"
+- Books: Check publisher type (museums, university presses), exhibition contexts, academic treatises
+- Datasets: Pure data without code, data repositories, measurement/observation records
+
+## Response
 
 Respond only with the number of the category. Do not include any additional information. This is extremely important. Do not include any additional text, punctuation, or whitespace and end your message immediately after the number."""
 
