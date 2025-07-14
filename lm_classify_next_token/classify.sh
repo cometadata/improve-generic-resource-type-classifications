@@ -10,6 +10,7 @@
 
 module load conda
 . "$(conda info --base)/etc/profile.d/conda.sh"
+conda activate comet
 cd /scratch/m000152/comet/generic-resource-type/lm_classify_next_token
 
 python classify.py \
