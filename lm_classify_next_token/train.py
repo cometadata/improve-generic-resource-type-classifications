@@ -1,12 +1,13 @@
 import json
 from trl import SFTTrainer
 from dotenv import load_dotenv
-from prompt import SYSTEM_PROMPT, CATEGORIES
+from prompt import SYSTEM_PROMPT, CATEGORIES, N_CHOICES
 import argparse
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import LoraConfig, get_peft_model
 from collections import defaultdict
 import random
+from tqdm import tqdm
 
 assert load_dotenv(), "Failed to load environment variables"
 
