@@ -12,6 +12,7 @@ from tqdm import tqdm
 from trl import SFTTrainer, SFTConfig
 from datetime import datetime
 from pathlib import Path
+import torch
 
 assert load_dotenv(), "Failed to load environment variables"
 
