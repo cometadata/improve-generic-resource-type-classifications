@@ -44,7 +44,7 @@ def create_dataset(args):
 
     # randomly sample n_per_category examples from each category
     sampled_lines = []
-    for rtg in CATEGORIES:
+    for rtg in line_nums:
         sample_amt = min(args.n_per_category, len(line_nums[rtg]))
         sampled_lines.extend(random.sample(line_nums[rtg], sample_amt))
 
