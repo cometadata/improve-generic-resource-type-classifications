@@ -54,14 +54,19 @@ def create_dataset(args):
         sample_amt = min(args.n_per_category, len(line_nums[rtg]))
         sampled_lines.extend(random.sample(line_nums[rtg], sample_amt))
 
+    # get those lines from the input file
+    sampled_lines = set(sampled_lines)
+    to_write = []
+    with open(args.input_file, "r") as in_f:
+        for i, line in enumerate(in_f):
+            if i in sampled_lines:
+                to_write.append(line)
+    
+
     # save the dataset
     with open(args.output_file, "w") as out_f:
-        for line_num in tqdm(sampled_lines, total=len(sampled_lines), desc="Saving dataset"):
-            with open(args.input_file, "r") as in_f:
-                for i, line in enumerate(in_f):
-                    if i == line_num:
-                        out_f.write(line)
-                        break
+        for line in tqdm(to_write, total=len(to_write), desc="Saving dataset"):
+            out_f.write(line)
 
 
 def train_model(args):
@@ -110,6 +115,9 @@ def train_model(args):
             })
     print(f'Loaded {len(data)} examples')
     breakpoint()
+
+    # create the dataset
+    dataset = Dataset.from_list(data)
 
 def main():
     args = parse_args()
