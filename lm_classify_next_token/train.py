@@ -1,7 +1,7 @@
 import json
 from trl import SFTTrainer
 from dotenv import load_dotenv
-from classify import SYSTEM_PROMPT, CATEGORIES
+from prompt import SYSTEM_PROMPT, CATEGORIES
 import argparse
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import LoraConfig, get_peft_model
