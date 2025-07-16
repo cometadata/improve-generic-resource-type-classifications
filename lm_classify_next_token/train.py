@@ -6,8 +6,12 @@ import argparse
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import LoraConfig, get_peft_model
 from collections import defaultdict
+from datasets import Dataset
 import random
 from tqdm import tqdm
+from trl import SFTTrainer, SFTConfig
+from datetime import datetime
+from pathlib import Path
 
 assert load_dotenv(), "Failed to load environment variables"
 
@@ -33,6 +37,12 @@ def parse_args():
     train_parser.add_argument("--lora_r", type=int, default=8, help="Lora rank.")
     train_parser.add_argument("--lora_alpha", type=int, default=16, help="Lora alpha.")
     train_parser.add_argument("--lora_dropout", type=float, default=0.1, help="Lora dropout.")
+
+    train_parser.add_argument("--learning_rate", type=float, default=1e-4, help="Learning rate.")
+    train_parser.add_argument("--num_train_epochs", type=int, default=1, help="Number of training epochs.")
+    train_parser.add_argument("--warmup_steps", type=int, default=100, help="Number of warmup steps.")
+    train_parser.add_argument("--logging_steps", type=int, default=10, help="Number of logging steps.")
+    train_parser.add_argument("--save_steps", type=int, default=100, help="Number of save steps.")
 
     return parser.parse_args()
 
@@ -71,8 +81,13 @@ def create_dataset(args):
 
 def train_model(args):
     # load the peft model
-    model = AutoModelForCausalLM.from_pretrained(args.model, device_map = 'auto')
+    model = AutoModelForCausalLM.from_pretrained(
+        args.model,
+        device_map = 'auto',
+        attn_implementation="flash_attention_2"
+    )
     tokenizer = AutoTokenizer.from_pretrained(args.model)
+    tokenizer.pad_token = tokenizer.eos_token
     peft_config = LoraConfig(
         r = args.lora_r,
         lora_alpha = args.lora_alpha,
@@ -111,13 +126,49 @@ def train_model(args):
             data.append({
                 "prompt": prompt,
                 "label": rtg,
-                'completion': rtg_to_number[rtg]
+                'completion': str(rtg_to_number[rtg])
             })
     print(f'Loaded {len(data)} examples')
-    breakpoint()
-
-    # create the dataset
     dataset = Dataset.from_list(data)
+
+    # run name
+    run_name = f"{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_{args.model.split('/')[-1]}"
+    output_dir = Path(args.output_dir) / run_name
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # calculate max token length
+    max_token_length = 0
+    for row in tqdm(dataset, desc="Calculating max token length"):
+        max_token_length = max(max_token_length, len(tokenizer(row['prompt']).input_ids))
+
+    # training
+    config = SFTConfig(
+        output_dir = output_dir,
+
+        learning_rate = args.learning_rate,
+        num_train_epochs = args.num_train_epochs,
+        lr_scheduler_type = 'cosine',
+        warmup_steps = args.warmup_steps,
+
+        completion_only_loss = True,
+
+        auto_find_batch_size = True,
+        max_length = max_token_length,
+        
+        logging_steps = args.logging_steps,
+        save_steps = args.save_steps,
+        report_to = 'wandb'
+    )
+
+    trainer = SFTTrainer(
+        model = model,
+        args = config,
+        train_dataset = dataset,
+        processing_class = tokenizer,
+    )
+
+    trainer.train()
+    trainer.save_model()
 
 def main():
     args = parse_args()
