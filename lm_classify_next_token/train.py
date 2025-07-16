@@ -58,9 +58,10 @@ def create_dataset(args):
     with open(args.output_file, "w") as out_f:
         for line_num in tqdm(sampled_lines, total=len(sampled_lines), desc="Saving dataset"):
             with open(args.input_file, "r") as in_f:
-                in_f.seek(line_num)
-                line = in_f.readline()
-                out_f.write(line)
+                for i, line in enumerate(in_f):
+                    if i == line_num:
+                        out_f.write(line)
+                        break
 
 
 def train_model(args):
