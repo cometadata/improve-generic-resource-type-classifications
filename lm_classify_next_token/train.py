@@ -49,12 +49,12 @@ def create_dataset(args):
         sampled_lines.extend(random.sample(line_nums[rtg], sample_amt))
 
     # save the dataset
-    with open(args.output_file, "w") as f:
+    with open(args.output_file, "w") as out_f:
         for line_num in tqdm(sampled_lines, total=len(sampled_lines), desc="Saving dataset"):
-            with open(args.input_file, "r") as f:
-                f.seek(line_num)
-                line = f.readline()
-                f.write(line)
+            with open(args.input_file, "r") as in_f:
+                in_f.seek(line_num)
+                line = in_f.readline()
+                out_f.write(line)
 
 
 def main():
