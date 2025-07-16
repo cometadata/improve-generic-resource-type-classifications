@@ -30,7 +30,7 @@ def parse_args():
     
     # train subcommand
     train_parser = subparsers.add_parser("train", help="Train a model.")
-    train_parser.add_argument("--input_file", type=str, default="train_dataset.jsonl", help="Path to the training data file.")
+    train_parser.add_argument("--input_file", type=str, default="data/train_dataset.jsonl", help="Path to the training data file.")
     train_parser.add_argument("--model", type=str, default="Qwen/Qwen2.5-7B-Instruct", help="Model to use for classification.")
     train_parser.add_argument("--output_dir", type=str, default="checkpoints", help="Path to the output directory.")
 
@@ -84,7 +84,8 @@ def train_model(args):
     model = AutoModelForCausalLM.from_pretrained(
         args.model,
         device_map = 'auto',
-        attn_implementation="flash_attention_2"
+        attn_implementation="flash_attention_2",
+        torch_dtype=torch.bfloat16,
     )
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     tokenizer.pad_token = tokenizer.eos_token
@@ -130,6 +131,7 @@ def train_model(args):
             })
     print(f'Loaded {len(data)} examples')
     dataset = Dataset.from_list(data)
+    dataset.save_to_disk("data/")
 
     # run name
     run_name = f"{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_{args.model.split('/')[-1]}"
@@ -140,6 +142,7 @@ def train_model(args):
     max_token_length = 0
     for row in tqdm(dataset, desc="Calculating max token length"):
         max_token_length = max(max_token_length, len(tokenizer(row['prompt']).input_ids))
+    print(f"Max token length: {max_token_length}")
 
     # training
     config = SFTConfig(
