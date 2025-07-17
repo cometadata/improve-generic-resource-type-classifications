@@ -34,6 +34,7 @@ def parse_args():
     train_parser.add_argument("--input_file", type=str, default="data/train_dataset.jsonl", help="Path to the training data file.")
     train_parser.add_argument("--model", type=str, default="Qwen/Qwen2.5-7B-Instruct", help="Model to use for classification.")
     train_parser.add_argument("--output_dir", type=str, default="checkpoints", help="Path to the output directory.")
+    train_parser.add_argument("--max_length", type=int, default=60_000, help="Max length of input sequence")
 
     train_parser.add_argument("--lora_r", type=int, default=8, help="Lora rank.")
     train_parser.add_argument("--lora_alpha", type=int, default=16, help="Lora alpha.")
@@ -128,7 +129,7 @@ def train_model(args):
             data.append({
                 "prompt": prompt,
                 "label": rtg,
-                'completion': f'{rtg_to_number[rtg]}{tokenizer.eos_token}'
+                'completion': str(rtg_to_number[rtg])
             })
     print(f'Loaded {len(data)} examples')
     dataset = Dataset.from_list(data)
@@ -137,12 +138,6 @@ def train_model(args):
     run_name = f"{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_{args.model.split('/')[-1]}"
     output_dir = Path(args.output_dir) / run_name
     output_dir.mkdir(parents=True, exist_ok=True)
-
-    # calculate max token length
-    max_token_length = 0
-    for row in tqdm(dataset, desc="Calculating max token length"):
-        max_token_length = max(max_token_length, len(tokenizer(row['prompt']).input_ids))
-    print(f"Max token length: {max_token_length}")
 
     # training
     config = SFTConfig(
@@ -156,11 +151,12 @@ def train_model(args):
         completion_only_loss = True,
 
         auto_find_batch_size = True,
-        max_length = max_token_length,
+        max_length = args.max_length,
         
         logging_steps = args.logging_steps,
         save_steps = args.save_steps,
-        report_to = 'wandb'
+        report_to = 'wandb',
+        packing = True
     )
 
     trainer = SFTTrainer(
