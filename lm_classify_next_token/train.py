@@ -156,7 +156,8 @@ def train_model(args):
         logging_steps = args.logging_steps,
         save_steps = args.save_steps,
         report_to = 'wandb',
-        packing = True
+        packing = True,
+        run_name = run_name
     )
 
     trainer = SFTTrainer(
