@@ -43,7 +43,7 @@ def parse_args():
     train_parser.add_argument("--num_train_epochs", type=int, default=1, help="Number of training epochs.")
     train_parser.add_argument("--warmup_steps", type=int, default=100, help="Number of warmup steps.")
     train_parser.add_argument("--logging_steps", type=int, default=10, help="Number of logging steps.")
-    train_parser.add_argument("--save_steps", type=int, default=100, help="Number of save steps.")
+    train_parser.add_argument("--save_steps", type=int, default=1000, help="Number of save steps.")
 
     return parser.parse_args()
 
@@ -123,16 +123,15 @@ def train_model(args):
             prompt = tokenizer.apply_chat_template([
                 {'role': 'system', 'content': SYSTEM_PROMPT},
                 {'role': 'user', 'content': resource_desc}
-            ], tokenize=False)
+            ], tokenize=False, add_generation_prompt=True)
             
             data.append({
                 "prompt": prompt,
                 "label": rtg,
-                'completion': str(rtg_to_number[rtg])
+                'completion': f'{rtg_to_number[rtg]}{tokenizer.eos_token}'
             })
     print(f'Loaded {len(data)} examples')
     dataset = Dataset.from_list(data)
-    dataset.save_to_disk("data/")
 
     # run name
     run_name = f"{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_{args.model.split('/')[-1]}"

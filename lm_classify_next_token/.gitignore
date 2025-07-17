@@ -1,1 +1,5 @@
 *.md
+.env
+__pycache__
+checkpoints
+wandb
