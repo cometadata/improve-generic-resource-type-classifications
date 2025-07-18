@@ -1,4 +1,5 @@
 from vllm import LLM, SamplingParams
+from vllm.lora.request import LoRARequest
 from tqdm import tqdm
 from transformers import AutoTokenizer
 import json
@@ -18,6 +19,7 @@ def parse_args():
     parser.add_argument("--output_file", type=str, required=True, help="Path to the output file.")
     parser.add_argument("--model", type=str, default="Qwen/Qwen3-8B", help="Model to use for classification.")
     parser.add_argument("--batch_size", type=int, default=1_000, help="Queue up this many articles before processing.")
+    parser.add_argument("--lora_path", type=str, default=None, help="Path to LoRA adapter weights.")
     
     return parser.parse_args()
 
@@ -40,7 +42,12 @@ def process_batch(args, llm, tokenizer, article_batch, batch, accuracy_counter):
         max_tokens=3,
         logprobs=1
     )
-    outputs = llm.generate(prompts, sampling_params)
+    # configure lora request if needed
+    if args.lora_path:
+        lora_request = LoRARequest("lora_adapter", 1, args.lora_path)
+        outputs = llm.generate(prompts, sampling_params, lora_request=lora_request)
+    else:
+        outputs = llm.generate(prompts, sampling_params)
 
     # write the output to the output file
     with open(args.output_file, "a") as f:
@@ -87,11 +94,15 @@ def main():
     args = parse_args()
 
     # load the model
-    llm = LLM(
-        args.model,
-        rope_scaling = {"rope_type":"yarn","factor":2.0,"original_max_position_embeddings":32768},
-        max_model_len=32768*2
-    )
+    llm_kwargs = {
+        "rope_scaling": {"rope_type":"yarn","factor":2.0,"original_max_position_embeddings":32768},
+        "max_model_len": 32768*2
+    }
+    
+    if args.lora_path:
+        llm_kwargs["enable_lora"] = True
+    
+    llm = LLM(args.model, **llm_kwargs)
     tokenizer = AutoTokenizer.from_pretrained(args.model)
 
     # initialize accuracy counter
