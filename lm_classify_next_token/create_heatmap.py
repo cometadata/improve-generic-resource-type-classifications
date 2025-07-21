@@ -6,6 +6,38 @@ import pandas as pd
 import sys
 import os
 
+def preprocess_categories(data):
+    """
+    Preprocesses categories to only include valid ones, mapping others to 'Null'.
+    This function can be easily removed to restore original behavior.
+    """
+    valid_categories = {
+        'Audiovisual', 'Book', 'Collection', 'ConferenceProceeding', 'Dataset', 
+        'Dissertation', 'Event', 'Image', 'InteractiveResource', 'Journal', 
+        'JournalArticle', 'PeerReview', 'PhysicalObject', 'Software', 
+        'StudyRegistration', 'Null'
+    }
+    
+    processed_data = {}
+    
+    for true_label, predictions in data.items():
+        # Map true label to valid category or Null
+        processed_true = true_label if true_label in valid_categories else 'Null'
+        
+        if processed_true not in processed_data:
+            processed_data[processed_true] = {}
+        
+        for pred_label, count in predictions.items():
+            # Map predicted label to valid category or Null
+            processed_pred = pred_label if pred_label in valid_categories else 'Null'
+            
+            if processed_pred not in processed_data[processed_true]:
+                processed_data[processed_true][processed_pred] = 0
+            
+            processed_data[processed_true][processed_pred] += count
+    
+    return processed_data
+
 if len(sys.argv) != 2:
     print("Usage: python create_heatmap.py <input_json_file>")
     sys.exit(1)
@@ -17,6 +49,9 @@ base_name = os.path.splitext(os.path.basename(input_file))[0]
 # Load the accuracy data
 with open(input_file, 'r') as f:
     data = json.load(f)
+
+# Preprocess categories to include only valid ones
+data = preprocess_categories(data)
 
 # Convert to DataFrame for easier manipulation
 rows = []
