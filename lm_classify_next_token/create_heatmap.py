@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import sys
 import os
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support, classification_report
 
 def preprocess_categories(data):
     """
@@ -67,6 +68,18 @@ confusion_matrix = df.pivot(index='true', columns='predicted', values='count').f
 # Normalize by row (true label totals)
 confusion_matrix_norm = confusion_matrix.div(confusion_matrix.sum(axis=1), axis=0)
 
+# Calculate metrics
+true_labels = []
+predicted_labels = []
+
+for _, row in df.iterrows():
+    count = int(row['count'])
+    true_labels.extend([row['true']] * count)
+    predicted_labels.extend([row['predicted']] * count)
+
+print(f"Detailed Classification Report:")
+print(classification_report(true_labels, predicted_labels, zero_division=0))
+
 # Create heatmap
 plt.figure(figsize=(16, 12))
 sns.heatmap(confusion_matrix_norm,
@@ -82,4 +95,4 @@ plt.tight_layout()
 output_path = os.path.join(input_dir, f'{base_name}_confusion_matrix.png')
 plt.savefig(output_path, dpi=300, bbox_inches='tight')
 print(f"Heatmap saved to: {output_path}")
-plt.show()
+# plt.show()
