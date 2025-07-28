@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import sys
 import os
+from collections import defaultdict
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support, classification_report
 
 def preprocess_categories(data):
@@ -12,31 +13,25 @@ def preprocess_categories(data):
     Preprocesses categories to only include valid ones, mapping others to 'Null'.
     This function can be easily removed to restore original behavior.
     """
-    valid_categories = {
-        'Audiovisual', 'Book', 'Collection', 'ConferenceProceeding', 'Dataset', 
-        'Dissertation', 'Event', 'Image', 'InteractiveResource', 'Journal', 
-        'JournalArticle', 'PeerReview', 'PhysicalObject', 'Software', 
-        'StudyRegistration', 'Null'
-    }
-    
-    processed_data = {}
-    
+    remap_categories = {'Film': 'Audiovisual'}
+    remove_categories = {'Other', 'Text'}
+    processed_data = defaultdict(lambda: defaultdict(int))
+
     for true_label, predictions in data.items():
-        # Map true label to valid category or Null
-        processed_true = true_label if true_label in valid_categories else 'Null'
-        
-        if processed_true not in processed_data:
-            processed_data[processed_true] = {}
-        
+        # remap categories
+        processed_true = remap_categories.get(true_label, true_label)
+        if processed_true in remove_categories:
+            continue
+
+        # Process each predicted label
         for pred_label, count in predictions.items():
-            # Map predicted label to valid category or Null
-            processed_pred = pred_label if pred_label in valid_categories else 'Null'
-            
-            if processed_pred not in processed_data[processed_true]:
-                processed_data[processed_true][processed_pred] = 0
-            
+            # remap categories
+            processed_pred = remap_categories.get(pred_label, pred_label)
+            if processed_pred in remove_categories:
+                continue
+
             processed_data[processed_true][processed_pred] += count
-    
+
     return processed_data
 
 if len(sys.argv) != 2:
@@ -77,22 +72,22 @@ for _, row in df.iterrows():
     true_labels.extend([row['true']] * count)
     predicted_labels.extend([row['predicted']] * count)
 
-print(f"Detailed Classification Report:")
+print("Detailed Classification Report:")
 print(classification_report(true_labels, predicted_labels, zero_division=0))
 
 # Create heatmap
-plt.figure(figsize=(16, 12))
-sns.heatmap(confusion_matrix_norm,
-            annot=False,
-            cmap='Blues',
-            cbar_kws={'label': 'Normalized count'})
-plt.title('Confusion matrix (row-normalized)')
-plt.xlabel('Predicted')
-plt.ylabel('True label')
-plt.xticks(rotation=45, ha='right')
-plt.yticks(rotation=0)
-plt.tight_layout()
-output_path = os.path.join(input_dir, f'{base_name}_confusion_matrix.png')
-plt.savefig(output_path, dpi=300, bbox_inches='tight')
-print(f"Heatmap saved to: {output_path}")
-# plt.show()
+# plt.figure(figsize=(16, 12))
+# sns.heatmap(confusion_matrix_norm,
+#             annot=False,
+#             cmap='Blues',
+#             cbar_kws={'label': 'Normalized count'})
+# plt.title('Confusion matrix (row-normalized)')
+# plt.xlabel('Predicted')
+# plt.ylabel('True label')
+# plt.xticks(rotation=45, ha='right')
+# plt.yticks(rotation=0)
+# plt.tight_layout()
+# output_path = os.path.join(input_dir, f'{base_name}_confusion_matrix.png')
+# plt.savefig(output_path, dpi=300, bbox_inches='tight')
+# print(f"Heatmap saved to: {output_path}")
+# # plt.show()
