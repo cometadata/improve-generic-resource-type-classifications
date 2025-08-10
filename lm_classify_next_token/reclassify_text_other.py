@@ -37,12 +37,6 @@ def process_batch(args, llm, tokenizer, records_batch):
         ]
         prompts_chat.append(messages)
 
-    # Apply chat template
-    prompts = [
-        tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True, enable_thinking=False)
-        for messages in prompts_chat
-    ]
-
     # Configure sampling parameters
     sampling_params = SamplingParams(
         temperature=0,
@@ -54,7 +48,7 @@ def process_batch(args, llm, tokenizer, records_batch):
 
     # Generate with LoRA
     lora_request = LoRARequest("lora_adapter", 1, args.lora_path)
-    outputs = llm.generate(prompts, sampling_params, lora_request=lora_request)
+    outputs = llm.chat(prompts_chat, sampling_params, lora_request=lora_request)
 
     # Process outputs
     processed_records = []
