@@ -30,7 +30,7 @@ def process_batch(args, llm, tokenizer, records_batch):
     # Extract prompts from the records
     prompts_chat = []
     for record in records_batch:
-        prompt_content = record['prompt']
+        prompt_content = record['description']
         messages = [
             {'role': 'system', 'content': SYSTEM_PROMPT},
             {'role': 'user', 'content': prompt_content}
@@ -74,10 +74,12 @@ def process_batch(args, llm, tokenizer, records_batch):
             pass
 
         # Add new fields to record
-        processed_record = record.copy()
-        processed_record['completion'] = completion
-        processed_record['prediction'] = category_pred
-        processed_record['probability'] = cumulative_prob
+        processed_record = {
+            'prompt': record['description'],
+            'completion': completion,
+            'probability': cumulative_prob,
+            'prediction': category_pred,
+        }
 
         processed_records.append(processed_record)
 
