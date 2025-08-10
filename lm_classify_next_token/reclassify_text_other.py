@@ -92,7 +92,7 @@ def main():
     # Load the HuggingFace dataset
     print("Loading dataset from HuggingFace...")
     dataset = load_dataset("cometadata/datacite_rtg_text_other_reclassification_records_training_format")
-    train_data = dataset['train']
+    train_data = dataset
     print(f"Loaded {len(train_data)} records")
 
     # Initialize model with LoRA and tensor parallel
