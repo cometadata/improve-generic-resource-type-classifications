@@ -112,7 +112,7 @@ def main():
     total_batches = math.ceil(len(train_data) / args.batch_size)
 
     for i in tqdm(range(0, len(train_data), args.batch_size), total=total_batches, desc="Processing batches"):
-        batch_records = train_data[i:i + args.batch_size]
+        batch_records = [train_data[j] for j in range(i, min(i + args.batch_size, len(train_data)))]
         processed_batch = process_batch(args, llm, tokenizer, batch_records)
         all_processed_records.extend(processed_batch)
 
