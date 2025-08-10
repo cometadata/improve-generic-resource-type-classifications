@@ -23,6 +23,7 @@ def parse_args():
     parser.add_argument("--lora_path", type=str, default="checkpoints/2025-07-17_10-57-53_Qwen2.5-7B-Instruct/checkpoint-42000", help="Path to LoRA adapter.")
     parser.add_argument("--batch_size", type=int, default=10_000, help="Batch size for processing.")
     parser.add_argument("--tensor_parallel_size", type=int, default=4, help="Tensor parallel size for multi-GPU inference.")
+    parser.add_argument("--pipeline_parallel_size", type=int, default=2, help="Pipeline parallel size for multi-GPU inference.")
 
     return parser.parse_args()
 
@@ -97,7 +98,8 @@ def main():
         "rope_scaling": {"rope_type": "yarn", "factor": 2.0, "original_max_position_embeddings": 32768},
         "max_model_len": 32768 * 2,
         "enable_lora": True,
-        "tensor_parallel_size": args.tensor_parallel_size
+        "tensor_parallel_size": args.tensor_parallel_size,
+        "pipeline_parallel_size": args.tensor_parallel_size,
     }
 
     llm = LLM(args.model, **llm_kwargs)
