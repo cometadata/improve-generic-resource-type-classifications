@@ -27,7 +27,7 @@ def parse_args():
 
 
 def shard(args):
-    data = load_dataset("cometadata/datacite-rtg-text-other-reclassification-records-training-format")
+    data = load_dataset("cometadata/datacite-rtg-text-other-reclassification-records-training-format", split="train")
     shard_size = len(data) // args.num_shards
     for i in range(args.num_shards):
         start_idx = i * shard_size
@@ -39,7 +39,7 @@ def shard(args):
 
 def main(args):
     # set up dataset, model, and lora
-    data = load_dataset("cometadata/datacite-rtg-text-other-reclassification-records-training-format")
+    data = load_dataset("json", data_files=f"reclassify_data/shard_{args.idx}.json", split="train")
     lora_path = snapshot_download("cometadata/generic-resource-type-lora-qwen2.5-7b")
     llm = LLM(
         "Qwen/Qwen2.5-7B",
