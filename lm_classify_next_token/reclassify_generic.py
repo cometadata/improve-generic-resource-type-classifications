@@ -18,6 +18,7 @@ def parse_args():
     # Inference mode
     inference_parser = subparsers.add_parser("inference", help="Run inference on the dataset.")
     inference_parser.add_argument("idx", type=int, help="Index of the shard to process.")
+    inference_parser.add_argument("--batch_size", type=int, default=10_000, help="Batch size for processing.")
 
     # Sharding mode
     shard_parser = subparsers.add_parser("shard", help="Shard the dataset into multiple parts.")
@@ -63,6 +64,9 @@ def main(args):
             {'role': 'user', 'content': x['description']}
         ]
     })
+
+    # run inference
+
 
 if __name__ == "__main__":
     args = parse_args()
