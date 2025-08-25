@@ -60,6 +60,8 @@ def main(args):
     lora_request = LoRARequest("lora_adapter", 1, lora_path)
 
     # format dataset
+    print(f"=== SHARD {args.idx} ===")
+    print(f"Number of records in this shard: {len(data)}")
     data = data.map(lambda x: {
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
@@ -77,13 +79,14 @@ def main(args):
             lora_request=lora_request
         )
         for record, completion in zip(batch, completions):
+            del record['messages']
             record["completion"] = completion.outputs[0].text
             record["probability"] = math.exp(completion.outputs[0].cumulative_logprob)
-            record["category"] = None
+            record["label"] = None
             try:
                 completion_int = ''.join([x for x in record["completion"] if x.isdigit()])
                 category_pred = int(completion_int)
-                record["category"] = CATEGORIES[category_pred]
+                record["label"] = CATEGORIES[category_pred]
             except:
                 pass
 
