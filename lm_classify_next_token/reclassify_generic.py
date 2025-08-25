@@ -8,6 +8,7 @@ from prompt import CATEGORIES, SYSTEM_PROMPT, N_CHOICES
 import argparse
 import math
 import json
+from transformers import AutoTokenizer
 
 assert load_dotenv(), "Failed to load environment variables from .env file"
 
@@ -58,6 +59,7 @@ def main(args):
         logprobs=1
     )
     lora_request = LoRARequest("lora_adapter", 1, lora_path)
+    tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-7B-Instruct")
 
     # format dataset
     print(f"=== SHARD {args.idx} ===")
@@ -68,6 +70,11 @@ def main(args):
             {'role': 'user', 'content': x['description']}
         ]
     }, num_proc=16)
+    data = data.filter(
+        lambda row: len(tokenizer.apply_chat_template(row['messages'], tokenize=True)) < 32768*2,
+        num_proc=16
+    )
+    print(f"Number of records after filtering for length: {len(data)}")
 
     # run inference
     for i in tqdm(range(0, len(data), args.batch_size), desc=f"[shard {args.idx}] processing batches"):
