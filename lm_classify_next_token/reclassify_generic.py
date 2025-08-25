@@ -45,7 +45,7 @@ def main(args):
     data = load_dataset("json", data_files=f"reclassify_data/shard_{args.idx}.jsonl", split="train")
     lora_path = snapshot_download("cometadata/generic-resource-type-lora-qwen2.5-7b")
     llm = LLM(
-        "Qwen/Qwen2.5-7B",
+        "Qwen/Qwen2.5-7B-Instruct",
         # rope_scaling={"rope_type":"yarn","factor":2.0,"original_max_position_embeddings":32768},
         # max_model_len=32768*2,
         enable_lora=True
