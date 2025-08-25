@@ -6,6 +6,8 @@ from vllm.lora.request import LoRARequest
 from tqdm import tqdm
 from prompt import CATEGORIES, SYSTEM_PROMPT, N_CHOICES
 import argparse
+import math
+import json
 
 assert load_dotenv(), "Failed to load environment variables from .env file"
 
@@ -18,7 +20,7 @@ def parse_args():
     # Inference mode
     inference_parser = subparsers.add_parser("inference", help="Run inference on the dataset.")
     inference_parser.add_argument("idx", type=int, help="Index of the shard to process.")
-    inference_parser.add_argument("--batch_size", type=int, default=10_000, help="Batch size for processing.")
+    inference_parser.add_argument("--batch_size", type=int, default=2048, help="Batch size for processing.")
 
     # Sharding mode
     shard_parser = subparsers.add_parser("shard", help="Shard the dataset into multiple parts.")
@@ -40,12 +42,12 @@ def shard(args):
 
 def main(args):
     # set up dataset, model, and lora
-    data = load_dataset("json", data_files=f"reclassify_data/shard_{args.idx}.json", split="train")
+    data = load_dataset("json", data_files=f"reclassify_data/shard_{args.idx}.jsonl", split="train")
     lora_path = snapshot_download("cometadata/generic-resource-type-lora-qwen2.5-7b")
     llm = LLM(
         "Qwen/Qwen2.5-7B",
-        rope_scaling={"rope_type":"yarn","factor":2.0,"original_max_position_embeddings":32768},
-        max_model_len=32768*2,
+        # rope_scaling={"rope_type":"yarn","factor":2.0,"original_max_position_embeddings":32768},
+        # max_model_len=32768*2,
         enable_lora=True
     )
     sampling_params = SamplingParams(
@@ -63,9 +65,33 @@ def main(args):
             {"role": "system", "content": SYSTEM_PROMPT},
             {'role': 'user', 'content': x['description']}
         ]
-    })
+    }, num_proc=16)
 
     # run inference
+    for i in tqdm(range(0, len(data), args.batch_size), desc=f"[shard {args.idx}] processing batches"):
+        batch = data.select(range(i, min(i + args.batch_size, len(data))))
+        messages = batch["messages"]
+        completions = llm.chat(
+            messages,
+            sampling_params,
+            lora_request=lora_request
+        )
+        for record, completion in zip(batch, completions):
+            record["completion"] = completion.outputs[0].text
+            record["probability"] = math.exp(completion.outputs[0].cumulative_logprob)
+            record["category"] = None
+            try:
+                completion_int = ''.join([x for x in record["completion"] if x.isdigit()])
+                category_pred = int(completion_int)
+                record["category"] = CATEGORIES[category_pred]
+            except:
+                pass
+
+            # write to file
+            with open(f"reclassify_output/shard_{args.idx}_output.jsonl", "a") as f:
+                f.write(json.dumps(record) + "\n")
+
+    print(f"Completed inference on shard {args.idx}.")
 
 
 if __name__ == "__main__":
